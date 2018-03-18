@@ -1,0 +1,63 @@
+image: docker:latest
+services:
+  - docker:dind
+
+before_script:
+  - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
+
+variables:
+  DOCKER_HOST: 'tcp://localhost:2375'
+  DOCKER_DRIVER: overlay
+
+stages:
+  - build-package
+  - build-docker
+  - release
+  - deploy-dev
+  - test
+  - deploy
+
+#build:
+#  image: golang:alpine
+#  before_script: []
+#  stage: build-package
+#  script:
+#    - 'apk add --no-cache --update git'
+#    - 'go get github.com/op/go-logging'
+#    - 'go get github.com/go-sql-driver/mysql'
+#    - 'go build'
+#    - 'ls -lsa'
+#  artifacts:
+#    when: on_success
+#    paths:
+#      - ftpex
+#    name: "ftpex-${CI_COMMIT_REF_NAME}"
+#    expire_in: 1 week
+
+build-docker:
+  stage: build-docker
+  script:
+    - echo 'build docker image'
+    - docker build --pull -t $CI_REGISTRY_IMAGE:$CI_BUILD_REF .
+    - docker push $CI_REGISTRY_IMAGE:$CI_BUILD_REF
+  except:
+    - tags
+
+release-tag:
+  stage: release
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:$CI_BUILD_REF
+    - docker tag $CI_REGISTRY_IMAGE:$CI_BUILD_REF $CI_REGISTRY_IMAGE:$CI_BUILD_REF_NAME
+    - docker push $CI_REGISTRY_IMAGE:$CI_BUILD_REF_NAME
+  except:
+    - master
+
+release-master:
+  stage: release
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:$CI_BUILD_REF
+    - docker tag $CI_REGISTRY_IMAGE:$CI_BUILD_REF $CI_REGISTRY_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE:latest
+  only:
+    - master
+

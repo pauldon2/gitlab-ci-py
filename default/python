@@ -1,0 +1,2 @@
+DOCKER_IMAGE=docker.devopsit.com.ua/wa/python
+DOCKER_IMAGE_TAG=dev

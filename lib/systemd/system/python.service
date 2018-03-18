@@ -1,0 +1,18 @@
+[Unit]
+Description=Python App
+Requires=docker.service
+After=docker.service
+
+[Service]
+EnvironmentFile=/etc/default/python
+SyslogIdentifier=python
+TimeoutStartSec=0
+Restart=always
+ExecStartPre=-/usr/bin/docker kill systemd_python
+ExecStartPre=/usr/bin/docker pull docker.devopsit.com.ua/wa/python:dev
+ExecStart=/usr/bin/docker run --rm --name=systemd_python --pid=host -p 88:80 -e "REDIS_HOST=redis.lab.int" ${DOCKER_IMAGE}:${DOCKER_IMAGE_TAG}
+ExecStop=/usr/bin/docker stop systemd_python
+ExecStopPost=/usr/bin/docker rm -f systemd_python
+
+[Install]
+WantedBy=multi-user.target
